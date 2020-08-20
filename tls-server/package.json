@@ -1,0 +1,7 @@
+{
+  "name": "@double-agent/tls-server",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "description": "TLS server for capturing clienthello"
+}

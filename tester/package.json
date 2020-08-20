@@ -1,0 +1,10 @@
+{
+  "name": "@double-agent/tester",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "puppeteer": "2.1.1",
+    "unzipper": "^0.10.11"
+  },
+  "devDependencies": {}
+}

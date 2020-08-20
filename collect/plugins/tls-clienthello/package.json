@@ -1,0 +1,8 @@
+{
+  "name": "@double-agent/collect-tls-clienthello",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {},
+  "description": "Collect the TLS clienthello handshake"
+}

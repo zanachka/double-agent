@@ -1,38 +1,28 @@
 import IAssignment from '../interfaces/IAssignment';
-import IDetectionDomains from '../interfaces/IDetectionDomains';
-import { URL } from 'url';
 import BrowsersToTest, {
   IBrowserToTestPickType,
   IBrowserToTestUsagePercent
 } from '@double-agent/profiler/lib/BrowsersToTest';
 import { getProfileDirNameFromUseragent } from '@double-agent/profiler';
 
-export default async function getAllAssignments(
-  httpDomains: IDetectionDomains,
-  httpsDomains: IDetectionDomains,
-  browsersToTest: BrowsersToTest,
-) {
+export default async function getAllAssignments(browsersToTest: BrowsersToTest) {
   const assignments: IAssignment[] = [];
-  browsersToTest.all.forEach(browserToTest => {
+  for (const browserToTest of browsersToTest.all) {
     const browserStackUseragent = browserToTest.useragents.find(x => x.sources.includes('BrowserStack'));
-    const assignment = buildAssignment(
+    const assignment = await buildAssignment(
       assignments.length,
-      httpDomains,
-      httpsDomains,
       browserStackUseragent ? browserStackUseragent.string : browserToTest.useragents[0].string,
       browserToTest.usagePercent,
       browserToTest.pickType,
     );
     assignments.push(assignment);
-  });
+  }
 
-  return assignments;
+  return assignments.slice(0, 1);
 }
 
-export function buildAssignment(
+export async function buildAssignment(
   assignmentId: number,
-  httpDomains: IDetectionDomains,
-  httpsDomains: IDetectionDomains,
   useragent: string = null,
   usagePercent: IBrowserToTestUsagePercent = null,
   pickType: IBrowserToTestPickType = [],
@@ -44,36 +34,5 @@ export function buildAssignment(
     pickType: pickType,
     usagePercent: usagePercent,
     profileDirName: profileDirName,
-    pages: [
-      {
-        url: httpsDomains.main.href,
-        clickSelector: '#goto-run-page',
-        clickDestinationUrl: new URL('/run', httpsDomains.main).href,
-      },
-      {
-        url: new URL('/run-page', httpsDomains.external).href,
-        clickSelector: '#goto-results-page',
-        clickDestinationUrl: new URL('/results', httpsDomains.external).href,
-      },
-      {
-        url: new URL('/results-page', httpsDomains.main).href,
-        waitForElementSelector: 'body.ready',
-      },
-      {
-        url: httpDomains.main.href,
-        clickSelector: '#goto-run-page',
-        clickDestinationUrl: new URL('/run', httpDomains.main).href,
-      },
-      {
-        url: new URL('/run-page', httpDomains.external).href,
-        clickSelector: '#goto-results-page',
-        clickDestinationUrl: new URL('/results', httpDomains.external).href,
-      },
-      {
-        url: new URL('/results-page', httpDomains.main).href,
-        waitForElementSelector: 'body.ready',
-      },
-    ],
-    sessionId: '',
   } as IAssignment;
 }

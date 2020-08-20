@@ -30,7 +30,7 @@ export default class BrowserStack {
       if (os.version.minor) osVersion += `.${os.version.minor}`;
     }
     return {
-      browserName: browser.name.toLowerCase(),
+      browserName: browser.name,
       browser_version: `${browser.version.major}.${browser.version.minor}`,
       os: os.name.replace('Mac ', ''),
       os_version: osVersion,
@@ -71,6 +71,7 @@ const browserstackSettings = {
   'browserstack.key': process.env.BROWSERSTACK_KEY,
   'browserstack.safari.allowAllCookies': 'true',
   'browserstack.console': 'errors',
+  "browserstack.selenium_version" : "3.14.0",
   chromeOptions: {
     excludeSwitches: ['enable-automation'],
   },

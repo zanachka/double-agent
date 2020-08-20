@@ -1,6 +1,6 @@
 import { By, Key, until, WebDriver, WebElement } from 'selenium-webdriver';
 import IAssignment from '@double-agent/runner/interfaces/IAssignment';
-import IAssignmentPage from '@double-agent/runner/interfaces/IAssignmentPage';
+import ISessionPage from "@double-agent/collect/interfaces/ISessionPage";
 
 export default async function runAssignmentInWebDriver(
   driver: WebDriver,
@@ -10,18 +10,26 @@ export default async function runAssignmentInWebDriver(
 ) {
   const needsEnterKey = browserName == 'Safari' && browserVersion === '13.0';
 
-  let prev: IAssignmentPage;
-  for (const page of assignment.pages) {
+  for (const pages of Object.values(assignment.pagesByPlugin)) {
+    await runPluginPagesInWebdriver(driver, pages, needsEnterKey);
+  }
+}
+
+async function runPluginPagesInWebdriver(driver: WebDriver, pages: ISessionPage[], needsEnterKey: boolean) {
+  let prev: ISessionPage;
+  for (const page of pages) {
     let currentUrl = await driver.getCurrentUrl();
-    if (prev && prev.clickSelector && currentUrl !== page.url) {
+    if (prev && prev.clickElementSelector && currentUrl !== page.url && !page.bypassWait) {
       // edge 18 takes forever to test codecs.. so need to wait a long time for page to load
-      await driver.wait(until.urlIs(page.url), 120e3);
+      console.log(`URL ${currentUrl} SHOULD BE ${page.url}`);
+      await driver.wait(until.urlIs(page.url), 60e3);
       currentUrl = await driver.getCurrentUrl();
     }
 
     if (page.url !== currentUrl) {
       console.log('Load page %s (was %s)', page.url, currentUrl);
       await driver.get(page.url);
+      console.log(`Loaded ${page.url}`);
     }
 
     if (page.waitForElementSelector) {
@@ -32,9 +40,9 @@ export default async function runAssignmentInWebDriver(
       await waitForElement(driver, 'body');
     }
 
-    if (page.clickSelector) {
-      console.log('Click element %s on %s', page.clickSelector, page.url);
-      const elem = await waitForElement(driver, page.clickSelector);
+    if (page.clickElementSelector) {
+      console.log('Click element %s on %s', page.clickElementSelector, page.url);
+      const elem = await waitForElement(driver, page.clickElementSelector);
       await driver.wait(until.elementIsVisible(elem));
 
       await clickElement(elem, driver, needsEnterKey);

@@ -14,5 +14,14 @@
     "preserveSymlinks": false,
     "experimentalDecorators": true
   },
-  "exclude": ["node_modules", "*.d.ts", "*.js"]
+  "exclude": [
+    "node_modules",
+    "*.d.ts",
+    "*.js",
+    "./emulation-generator",
+    "./analyze",
+    "./docs",
+    "-collect-plugins",
+    "-analyze-plugins"
+  ]
 }

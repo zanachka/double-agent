@@ -1,0 +1,8 @@
+{
+  "name": "@double-agent/collect-browser-dom",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {},
+  "description": "Collect the list of browser dom features"
+}

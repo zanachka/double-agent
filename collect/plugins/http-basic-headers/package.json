@@ -1,0 +1,25 @@
+{
+  "name": "@double-agent/collect-http-headers",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "checkCategories": [
+    "Cookie Support",
+    "Secure Cookies",
+    "Same Site Cookies",
+    "Same Origin Cookies",
+    "Cross Site Cookies"
+  ],
+  "description": "Compares header order, capitalization and default values to normal (recorded) user agent values",
+  "dependencies": {
+    "useragent": "^2.3.0",
+    "diff": "^4.0.2",
+    "uuid": "^7.0.2",
+    "ws": "^7.2.1",
+    "source-map-support": "^0.5.16"
+  },
+  "devDependencies": {
+    "@types/diff": "^4.0.2",
+    "@types/useragent": "^2.1.1"
+  }
+}

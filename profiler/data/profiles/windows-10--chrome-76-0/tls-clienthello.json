@@ -1,0 +1,185 @@
+{
+  "hasGrease": true,
+  "ja3Extended": "771,4865-4866-4867-49195-49199-49196-49200-52393-52392-49171-49172-156-157-47-53-10,0-23-65281-10-11-35-16-5-13-18-51-45-43-27-21,29-23-24,0,1027-2052-1025-1283-2053-1281-2054-1537-513,772-771-770-769,h2-http/1.1,1",
+  "ja3ExtendedMd5": "47ee0ad9c86cdaaf29cf72dd35d29231",
+  "ja3": "771,4865-4866-4867-49195-49199-49196-49200-52393-52392-49171-49172-156-157-47-53-10,0-23-65281-10-11-35-16-5-13-18-51-45-43-27-21,29-23-24,0",
+  "ja3Md5": "66918128f1b9b03303d77c6f2eefd128",
+  "ja3MatchFor": [],
+  "ja3erMatchFor": "TLS fingerprint seen 17826 times on Ja3er crowdsourced tool, but no confirmations (Mobile Safari: 3, 12, 10, 11, 13, IE: 8, 9, 11, Firefox Mobile: 61, 63, Chrome Mobile WebView: 30, 79, 76, 78, 74, 75, 72, 77, 44, 73, 43, 37, Puffin: 5, Chrome Mobile iOS: 78, 1Password: 7, Chrome Mobile: 74, 78, 77, 79, 76, 34, 75, 72, 73, 71, 55, 66, 68, 58, Yandex Browser: 19, 17, 15, Samsung Internet: 11, 7, Chrome: 78, 75, 74, 76, 77, 71, 79, 72, 73, 61, 62, 68, 81, 51, 55, 56, 65, 67, 80, 46, 60, Opera: 54, 53, 46, 63, 60, 62, 64, 65, 66, 58, 55, Amazon Silk: 75, YandexSearch: 8, 7, 5, 6, WebPageTest.org bot: 191111, Opera Mobile: 53, 54, 52, 51, 43, 32, 44, 38, 39, Facebook: 225, 226, 248, 227, 238, 246, 229, 247, Instagram: 118, 117, 119, 112, 120, LINE: 9, Edge Mobile: 42, Pinterest: 0, Mint Browser: 1, 3, 2, Firefox: 68, 59, 63, 71, 65, 69, Iron: 72, 75, 77, 73, 74, Vivaldi: 2, Whale: 1, 2, Safari: 12, Electron: 7, Edge: 77, 78, 79, 80, Coc Coc: 80, PagePeeker: 3, HeadlessChrome: 74, 76, 77, 78, 79, Chromium: 76, 77, 78, 79, 70, 73, 74, 75)",
+  "clientHello": {
+    "type": "ClientHello",
+    "version": "0x303 (TLS 1.2)",
+    "random": {
+      "unixTime": "0x941BE5B1",
+      "randomBytes": "92D5D607DFF7D1F5C2C8FEA130BCC4657117D7A947AEB2F49C43A25A"
+    },
+    "sessionId": "54E0787C507F7C61C7A75A1543D07595A454C8A69B3E0B3861DE2AB3E42BAF1B",
+    "ciphers": [
+      "{0x5A, 0x5A} GREASE",
+      "{0x13, 0x01} TLS_AES_128_GCM_SHA256",
+      "{0x13, 0x02} TLS_AES_256_GCM_SHA384",
+      "{0x13, 0x03} TLS_CHACHA20_POLY1305_SHA256",
+      "{0xC0, 0x2B} TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+      "{0xC0, 0x2F} TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+      "{0xC0, 0x2C} TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+      "{0xC0, 0x30} TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+      "{0xCC, 0xA9} TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
+      "{0xCC, 0xA8} TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
+      "{0xC0, 0x13} TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
+      "{0xC0, 0x14} TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA",
+      "{0x00, 0x9C} TLS_RSA_WITH_AES_128_GCM_SHA256",
+      "{0x00, 0x9D} TLS_RSA_WITH_AES_256_GCM_SHA384",
+      "{0x00, 0x2F} TLS_RSA_WITH_AES_128_CBC_SHA",
+      "{0x00, 0x35} TLS_RSA_WITH_AES_256_CBC_SHA",
+      "{0x00, 0x0A} TLS_RSA_WITH_3DES_EDE_CBC_SHA"
+    ],
+    "compressionMethods": [
+      "No Compression (0x00)"
+    ],
+    "extensions": [
+      {
+        "type": "GREASE",
+        "decimal": 31354,
+        "values": []
+      },
+      {
+        "type": "server_name",
+        "decimal": 0,
+        "values": [
+          "0000 - 00 1c 00 00 19 74 6c 73-2e 64 61 2d 63 6f 6c   .....tls.da-col",
+          "000f - 6c 65 63 74 2e 75 6c 69-78 65 65 2e 6f 72 67   lect.ulixee.org"
+        ]
+      },
+      {
+        "type": "extended_master_secret",
+        "decimal": 23,
+        "values": []
+      },
+      {
+        "type": "renegotiate",
+        "decimal": 65281,
+        "values": [
+          "<EMPTY>"
+        ]
+      },
+      {
+        "type": "supported_groups",
+        "decimal": 10,
+        "values": [
+          "GREASE (2570)",
+          "ecdh_x25519 (29)",
+          "secp256r1 (P-256) (23)",
+          "secp384r1 (P-384) (24)"
+        ]
+      },
+      {
+        "type": "ec_point_formats",
+        "decimal": 11,
+        "values": [
+          "uncompressed (0)"
+        ]
+      },
+      {
+        "type": "session_ticket",
+        "decimal": 35,
+        "values": []
+      },
+      {
+        "type": "application_layer_protocol_negotiation",
+        "decimal": 16,
+        "values": [
+          "h2",
+          "http/1.1"
+        ]
+      },
+      {
+        "type": "status_request",
+        "decimal": 5,
+        "values": [
+          "0000 - 01 00 00 00 00                                 ....."
+        ]
+      },
+      {
+        "type": "signature_algorithms",
+        "decimal": 13,
+        "values": [
+          "ecdsa_secp256r1_sha256 (0x0403)",
+          "rsa_pss_rsae_sha256 (0x0804)",
+          "rsa_pkcs1_sha256 (0x0401)",
+          "ecdsa_secp384r1_sha384 (0x0503)",
+          "rsa_pss_rsae_sha384 (0x0805)",
+          "rsa_pkcs1_sha384 (0x0501)",
+          "rsa_pss_rsae_sha512 (0x0806)",
+          "rsa_pkcs1_sha512 (0x0601)",
+          "rsa_pkcs1_sha1 (0x0201)"
+        ]
+      },
+      {
+        "type": "signed_certificate_timestamps",
+        "decimal": 18,
+        "values": []
+      },
+      {
+        "type": "key_share",
+        "decimal": 51,
+        "values": [
+          "NamedGroup: GREASE (2570)",
+          "key_exchange:  (len=1): 00",
+          "NamedGroup: ecdh_x25519 (29)",
+          "key_exchange:  (len=32): 1ED10C3F19E1E358D14B7ABA7C4307CB5585F07F3DEBDFCBD83212A661B4655E"
+        ]
+      },
+      {
+        "type": "psk_key_exchange_modes",
+        "decimal": 45,
+        "values": [
+          "psk_dhe_ke (1)"
+        ]
+      },
+      {
+        "type": "supported_versions",
+        "decimal": 43,
+        "values": [
+          "GREASE (47802)",
+          "TLS 1.3 (772)",
+          "TLS 1.2 (771)",
+          "TLS 1.1 (770)",
+          "TLS 1.0 (769)"
+        ]
+      },
+      {
+        "type": "compress_certificate",
+        "decimal": 27,
+        "values": [
+          "0000 - 02 00 02                                       ..."
+        ]
+      },
+      {
+        "type": "GREASE",
+        "decimal": 2570,
+        "values": [
+          "0000 - 00                                             ."
+        ]
+      },
+      {
+        "type": "padding",
+        "decimal": 21,
+        "values": [
+          "0000 - 00 00 00 00 00 00 00 00-00 00 00 00 00 00 00   ...............",
+          "000f - 00 00 00 00 00 00 00 00-00 00 00 00 00 00 00   ...............",
+          "001e - 00 00 00 00 00 00 00 00-00 00 00 00 00 00 00   ...............",
+          "002d - 00 00 00 00 00 00 00 00-00 00 00 00 00 00 00   ...............",
+          "003c - 00 00 00 00 00 00 00 00-00 00 00 00 00 00 00   ...............",
+          "004b - 00 00 00 00 00 00 00 00-00 00 00 00 00 00 00   ...............",
+          "005a - 00 00 00 00 00 00 00 00-00 00 00 00 00 00 00   ...............",
+          "0069 - 00 00 00 00 00 00 00 00-00 00 00 00 00 00 00   ...............",
+          "0078 - 00 00 00 00 00 00 00 00-00 00 00 00 00 00 00   ...............",
+          "0087 - 00 00 00 00 00 00 00 00-00 00 00 00 00 00 00   ...............",
+          "0096 - 00 00 00 00 00 00 00 00-00 00 00 00 00 00 00   ...............",
+          "00a5 - 00 00 00 00 00 00 00 00-00 00 00 00 00 00 00   ...............",
+          "00b4 - 00 00 00 00 00 00 00 00-00 00 00               ..........."
+        ]
+      }
+    ]
+  }
+}

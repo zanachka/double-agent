@@ -57,11 +57,14 @@
     "typescript": "^3.8.3"
   },
   "workspaces": [
-    "detections/*/*",
+    "collect",
+    "collect/*/*",
     "emulation-generator",
     "emulation-generator/dom-dumper",
     "runner",
-    "profiler"
+    "profiler",
+    "tls-server",
+    "tester"
   ],
   "lint-staged": {
     "./**/*.ts": [

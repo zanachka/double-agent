@@ -1,6 +1,6 @@
 import ClientHelloProfile from '@double-agent/tls-clienthello/lib/ClientHelloProfile';
-import buildJa3Extended from '@double-agent/tls-clienthello/lib/buildJa3Extended';
-import buildJa3 from '@double-agent/tls-clienthello/lib/buildJa3';
+import buildJa3Extended from '@double-agent/collect/tls/buildJa3Extended';
+import buildJa3 from '@double-agent/collect/tls/buildJa3';
 
 export default async function exportClienthelloProfiles() {
   const profiles = ClientHelloProfile.allProfiles;

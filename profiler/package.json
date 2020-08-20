@@ -17,6 +17,7 @@
     "p-queue": "^6.3.0",
     "selenium-webdriver": "^3.6.0",
     "source-map-support": "^0.5.16",
+    "unzipper": "^0.10.11",
     "user-agents": "latest",
     "useragent": "^2.3.0"
   },
