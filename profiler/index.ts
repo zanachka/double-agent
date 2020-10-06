@@ -1,16 +1,120 @@
-import IOperatingSystem from './interfaces/IOperatingSystem';
-import IBrowser from './interfaces/IBrowser';
-import { createOsKey, createOsKeyFromUseragent } from './lib/OsUtils';
-import { createBrowserKey, createBrowserKeyFromUseragent } from './lib/BrowserUtils';
+import Fs from 'fs';
+import Path from 'path';
+import { createOsIdFromUseragent } from '@double-agent/real-user-agents/lib/OsUtils';
+import { createBrowserIdFromUseragent } from '@double-agent/real-user-agents/lib/BrowserUtils';
 
-export function getProfileDirNameFromUseragent(useragent: string) {
-  const osKey = createOsKeyFromUseragent(useragent);
-  const browserKey = createBrowserKeyFromUseragent(useragent);
+const dataDir = Path.join(__dirname, 'data');
+const profilesDir = Path.join(dataDir, 'profiles');
+const profilePathsMap: { [pluginId: string]: { [useragentId: string]: string } } = {};
+const useragentIds: Set<string> = new Set();
+
+if (!Fs.existsSync(profilesDir)) {
+  Fs.mkdirSync(profilesDir);
+}
+
+let useragentStrings;
+
+// LOAD DATA ////////////////////////////////////////////////////////////////////////////////////
+
+for (const useragentIdWithoutMinor of Fs.readdirSync(profilesDir)) {
+  const minorVersionsDir = Path.join(profilesDir, useragentIdWithoutMinor);
+  const isDirectory = Fs.lstatSync(minorVersionsDir).isDirectory();
+  if (!isDirectory) continue;
+  for (const minorVersion of Fs.readdirSync(minorVersionsDir)) {
+    const useragentId = `${useragentIdWithoutMinor}-${minorVersion}`;
+    const profileDir = Path.join(minorVersionsDir, minorVersion);
+    const isDirectory = Fs.lstatSync(profileDir).isDirectory();
+    if (!isDirectory) continue;
+    for (const fileName of Fs.readdirSync(profileDir)) {
+      if (!fileName.endsWith('.json') || fileName.startsWith('_')) continue;
+      const pluginId = fileName.replace('.json', '');
+      const profilePath = Path.join(profileDir, fileName);
+      profilePathsMap[pluginId] = profilePathsMap[pluginId] || {};
+      profilePathsMap[pluginId][useragentId] = profilePath;
+      useragentIds.add(useragentId);
+    }
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////
+
+export function createUseragentId(useragent: string): string {
+  const osKey = createOsIdFromUseragent(useragent);
+  const browserKey = createBrowserIdFromUseragent(useragent);
+  return createUseragentIdFromKeys(osKey, browserKey);
+}
+
+export function createUseragentIdFromKeys(osKey: string, browserKey: string) {
   return `${osKey}--${browserKey}`;
 }
 
-export function getProfileDirName(os: IOperatingSystem, browser: IBrowser) {
-  const osKey = createOsKey(os);
-  const browserKey = createBrowserKey(browser);
-  return `${osKey}--${browserKey}`;
+////////////////////////////////////////////////////////////////////////////////////////////
+
+export default class Profiler {
+  static get useragentIds() {
+    return Array.from(useragentIds);
+  }
+
+  static get useragents() {
+    useragentStrings = useragentStrings || this.getProfiles('tcp/ttl').map(p => p.useragent);
+    return [...useragentStrings];
+  }
+
+  static get browserNames(): string[] {
+    const names = this.useragentIds.map(useragentId => this.extractMetaFromUseragentId(useragentId).browserName);
+    return Array.from(new Set(names));
+  }
+
+  static get osNames(): string[] {
+    const names = this.useragentIds.map(useragentId => this.extractMetaFromUseragentId(useragentId).osName);
+    return Array.from(new Set(names));
+  }
+
+  static findUseragentIdsByName(name: string) {
+    return this.useragentIds.filter(useragentId => {
+      const meta = this.extractMetaFromUseragentId(useragentId);
+      return [meta.osName, meta.browserName].includes(name);
+    });
+  }
+
+  static extractMetaFromUseragentId(useragentId: string) {
+    const matches = useragentId.match(/^([a-z-]+)(-([0-9-]+))?--([a-z-]+)-([0-9-]+)$/);
+    let [osName, _, osVersion, browserName, browserVersion] = matches.slice(1);
+    osVersion = osVersion || '';
+    return { osName, osVersion, browserName, browserVersion };
+  }
+
+  static getProfiles<TProfile = any>(pluginId: string): TProfile[] {
+    const profiles: TProfile[] = [];
+    if (!profilePathsMap[pluginId]) return profiles;
+
+    Object.values(profilePathsMap[pluginId]).forEach(profilePath => {
+      const data = Fs.readFileSync(profilePath, 'utf8');
+      try {
+        profiles.push(JSON.parse(data) as TProfile);
+      } catch (error) {
+        console.log(profilePath);
+        throw error;
+      }
+    });
+
+    return profiles;
+  }
+
+  static async getProfile<TProfile = any>(pluginId: string, useragent: string) {
+    const useragentId = createUseragentId(useragent);
+    const profilePathsByDirName = profilePathsMap[pluginId];
+    if (!profilePathsByDirName) return;
+
+    const profilePath = profilePathsByDirName[useragentId];
+    if (!profilePath) return;
+
+    const data = Fs.readFileSync(profilePath, 'utf8');
+    try {
+      return JSON.parse(data) as TProfile;
+    } catch(error) {
+      console.log(profilePath);
+      throw error;
+    }
+  }
 }

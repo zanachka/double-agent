@@ -57,12 +57,15 @@
     "typescript": "^3.8.3"
   },
   "workspaces": [
+    "analyze",
+    "analyze/*/*",
     "collect",
     "collect/*/*",
     "emulation-generator",
     "emulation-generator/dom-dumper",
     "runner",
     "profiler",
+    "real-user-agents",
     "tls-server",
     "tester"
   ],

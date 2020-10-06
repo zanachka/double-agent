@@ -1,0 +1,1 @@
+Promise.prototype is not being extracted due to an error when awaiting object.

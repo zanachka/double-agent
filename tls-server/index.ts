@@ -1,19 +1,15 @@
 import EventEmitter from 'events';
 import { ChildProcess, fork } from 'child_process';
-import ITlsResult from './interfaces/ITlsResult';
-import { IClientHello } from './lib/parseHelloMessage';
 import parseTlsRecordFromStderr from './lib/parseTlsRecordFromStderr';
-import buildJa3 from './lib/buildJa3';
-import buildJa3Extended, {isGreased} from './lib/buildJa3Extended';
-import ja3er from './lib/ja3er';
 import ServerResponse from './lib/ServerResponse';
 import IncomingMessage from "./lib/IncomingMessage";
+import IClientHello from "./interfaces/IClientHello";
 
 export default class TlsServer extends EventEmitter {
   private child: ChildProcess;
   private port: number;
   private openSslOutput: string;
-  private activeRequest: { https?: any, tls?: ITlsResult, isProcessing?: boolean } = {};
+  private activeRequest: { https?: any, clientHello?: IClientHello, isProcessing?: boolean } = {};
   private listenCallback: () => void;
 
   private readonly options: any;
@@ -52,11 +48,11 @@ export default class TlsServer extends EventEmitter {
   private emitRequest() {
     if (!this.activeRequest) return;
     if (!this.activeRequest.https) return;
-    if (!this.activeRequest.tls) return;
+    if (!this.activeRequest.clientHello) return;
     if (this.activeRequest.isProcessing) return;
     this.activeRequest.isProcessing = true;
 
-    const req = new IncomingMessage({ ...this.activeRequest.https, ...this.activeRequest.tls });
+    const req = new IncomingMessage({ ...this.activeRequest.https, clientHello: this.activeRequest.clientHello });
     const res = new ServerResponse(this.child, req);
     this.secureConnectionListener(req, res);
   }
@@ -103,33 +99,13 @@ export default class TlsServer extends EventEmitter {
     this.openSslOutput += message;
     const messages = this.openSslOutput.split('\n\n');
     this.openSslOutput = messages.pop();
+    if (this.activeRequest.clientHello) return;
+
     for (const str of messages) {
       try {
         let message = parseTlsRecordFromStderr(str);
         if ((message.header.content as any)?.type === 'ClientHello') {
-          const clienthello = message.header.content as IClientHello;
-          const ja3Details = buildJa3(clienthello);
-          const ja3Extended = buildJa3Extended(ja3Details, clienthello);
-          const ja3erStats = ja3er(ja3Details.md5);
-          const alsoSeenOn = `TLS fingerprint seen ${ja3erStats.count} times on Ja3er crowdsourced tool, but no confirmations`;
-          const alsoSeenOnBrowsers = [...ja3erStats.browsers.entries()].map(
-              ([key, val]) => `${key}: ${val.join(', ')}`,
-          );
-
-          if (this.activeRequest.tls) {
-            return; //this.emitError('Found a conflicting tls request');
-          }
-
-          this.activeRequest.tls = {
-            hasGrease: isGreased(ja3Extended.value),
-            ja3: ja3Details.value,
-            ja3Md5: ja3Details.md5,
-            ja3Extended: ja3Extended.value,
-            ja3ExtendedMd5: ja3Extended.md5,
-            ja3erMatchFor: `${alsoSeenOn} (${alsoSeenOnBrowsers.join(', ')})`,
-            ja3MatchFor: [],
-            clientHello: clienthello,
-          };
+          this.activeRequest.clientHello = message.header.content as IClientHello;
           this.emitRequest();
         }
       } catch (err) {

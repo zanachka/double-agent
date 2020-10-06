@@ -6,9 +6,13 @@ import IUserIdentifier from '../interfaces/IUserIdentifier';
 import Plugin from "./Plugin";
 import SessionTracker from "./SessionTracker";
 import PluginDelegate from "./PluginDelegate";
+import IBaseProfile from "../interfaces/IBaseProfile";
+import { createUseragentId } from "@double-agent/profiler";
+import { IAssignmentType } from "@double-agent/runner/interfaces/IAssignment";
 
 export default class Session implements ISession {
   public readonly id: string;
+  public readonly assignmentType: IAssignmentType;
   public readonly assetsNotLoaded: IAsset[] = [];
   public readonly expectedAssets: (IAsset & { fromUrl?: string })[] = [];
   public expectedUseragent: string;
@@ -20,28 +24,51 @@ export default class Session implements ISession {
   public useragent: string;
   public onSavePluginProfile: (plugin: Plugin, profile: any) => void;
 
-  private readonly sessionTracker: SessionTracker;
-  private readonly pluginDelegate: PluginDelegate;
-  private readonly profilesByPluginId: { [pluginId: string]: any } = {};
+  public readonly sessionTracker: SessionTracker;
+  public readonly pluginDelegate: PluginDelegate;
 
-  constructor(id: string, sessionTracker: SessionTracker, pluginDelegate: PluginDelegate) {
+  private readonly profilesByPluginId: { [pluginId: string]: IBaseProfile } = {};
+  private readonly currentPageIndexByPluginId: { [pluginId: string]: number } = {};
+  constructor(id: string, assignmentType: IAssignmentType, sessionTracker: SessionTracker, pluginDelegate: PluginDelegate) {
     this.id = id;
+    this.assignmentType = assignmentType;
     this.sessionTracker = sessionTracker;
     this.pluginDelegate = pluginDelegate;
   }
 
-  public get pages() {
-    const plugins = {};
-    for (const plugin of this.pluginDelegate.plugins) {
-      plugins[plugin.id] = plugin.pagesForSession(this.id);
+  public trackCurrentPageIndex(pluginId: string, currentPageIndex: number) {
+    const lastPageIndex = this.currentPageIndexByPluginId[pluginId] || 0;
+    if (currentPageIndex < lastPageIndex) {
+      throw new Error(`You cannot go backwards in session. ${currentPageIndex} must be >= ${lastPageIndex}`);
     }
-    return plugins;
+    this.currentPageIndexByPluginId[pluginId] = currentPageIndex;
+  }
+
+  public generatePages() {
+    const pagesByPluginId = {};
+    for (const plugin of this.pluginDelegate.plugins) {
+      const pages = plugin.pagesForSession(this);
+      if (pages.length) {
+        pagesByPluginId[plugin.id] = pages;
+      }
+    }
+    return pagesByPluginId;
   }
 
   public async startServers() {
     for (const plugin of this.pluginDelegate.plugins) {
-      await plugin.createServersForSession(this.id, this.sessionTracker, this.pluginDelegate);
+      await plugin.createServersForSession(this);
     }
+  }
+
+  public recordRequest(requestDetails: IRequestDetails) {
+    const { useragent } = requestDetails;
+
+    if (!this.useragent) {
+      this.setUseragent(useragent);
+    }
+
+    this.requests.push(requestDetails);
   }
 
   public setUseragent(useragent: string) {
@@ -49,24 +76,30 @@ export default class Session implements ISession {
     this.parsedUseragent = lookup(useragent);
   }
 
-  public getPluginProfile<T>(plugin: Plugin, defaultProfile: T): T {
+  public getPluginProfileData<TProfileData>(plugin: Plugin, data: TProfileData): TProfileData {
     if (!this.profilesByPluginId[plugin.id]) {
-      this.profilesByPluginId[plugin.id] = defaultProfile;
+      this.profilesByPluginId[plugin.id] = {
+        useragentId: createUseragentId(this.useragent),
+        data,
+      }
     }
-    return this.profilesByPluginId[plugin.id];
+    return this.profilesByPluginId[plugin.id].data;
   }
 
-  public savePluginProfile<T>(plugin: Plugin, profile: T, keepInMemory: boolean = false) {
+  public savePluginProfileData<TProfileData>(plugin: Plugin, data: TProfileData, keepInMemory: boolean = false) {
+    const profile: IBaseProfile = {
+      useragentId: createUseragentId(this.useragent),
+      data,
+    }
     if (keepInMemory) {
       this.profilesByPluginId[plugin.id] = profile;
     }
     if (this.onSavePluginProfile) {
       this.onSavePluginProfile(plugin, profile);
     }
-  }
-
-  public addIdentifier(identifier: any) {
-    console.log('SAVING IDENTIFIER for ', identifier.pluginName);
+    if (!keepInMemory) {
+      delete this.profilesByPluginId[plugin.id];
+    }
   }
 
   public toJSON() {
@@ -85,10 +118,6 @@ export default class Session implements ISession {
 
   public async close() {
     for (const plugin of this.pluginDelegate.plugins) {
-      const profile = this.profilesByPluginId[plugin.id];
-      if (profile?.isPending) {
-        this.savePluginProfile(plugin, profile.data);
-      }
       await plugin.closeServersForSession(this.id);
     }
   }

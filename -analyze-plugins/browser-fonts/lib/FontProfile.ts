@@ -1,12 +1,12 @@
 import IFontProfile from '../interfaces/IFontProfile';
 import { Agent, lookup } from 'useragent';
-import ProfilerData from '@double-agent/profiler/data';
+import Profiler from '@double-agent/profiler';
 
 const fontGroupings: IFontGrouping[] = [];
 
 export default class FontProfile {
   public static readAll() {
-    const profiles: IFontProfile[] = ProfilerData.getByPluginId('browser/fonts');
+    const profiles: IFontProfile[] = Profiler.getProfiles('browser/fonts');
 
     return profiles;
   }
@@ -14,7 +14,7 @@ export default class FontProfile {
   public static async save(useragent: string, fonts: string[]) {
     const profile = { fonts, useragent };
     if (process.env.GENERATE_PROFILES) {
-      await ProfilerData.saveProfile('browser/fonts', useragent, profile);
+      await Profiler.saveProfile('browser/fonts', useragent, profile);
     }
     return profile;
   }

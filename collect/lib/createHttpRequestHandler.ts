@@ -5,10 +5,11 @@ import IRequestContext from '../interfaces/IRequestContext';
 import extractRequestDetails from './extractRequestDetails';
 import RequestContext from '../lib/RequestContext';
 import IServerContext from '../interfaces/IServerContext';
-import { getProfileDirNameFromUseragent } from '@double-agent/profiler';
+import { createUseragentId } from '@double-agent/profiler';
 import BaseServer from "../servers/BaseServer";
 import {CrossDomain, MainDomain, SubDomain} from "../index";
 import {isRecognizedDomain} from "./DomainUtils";
+import http from "http";
 
 export default function createHttpRequestHandler(server: BaseServer, serverContext: IServerContext) {
   return async function requestHandler(req: IncomingMessage, res: ServerResponse) {
@@ -30,17 +31,18 @@ export default function createHttpRequestHandler(server: BaseServer, serverConte
     }
 
     try {
-      const { requestDetails } = await extractRequestDetails(server, req, new Date());
-      const session = sessionTracker.recordRequest(requestDetails, requestUrl);
+      const session = sessionTracker.getSessionFromServerRequest(server, req);
+      const { requestDetails } = await extractRequestDetails(server, req, session);
       const ctx = new RequestContext(server, req, res, requestUrl, requestDetails, session);
-      const profileDirName = getProfileDirNameFromUseragent(req.headers['user-agent']);
+      const useragentId = createUseragentId(req.headers['user-agent']);
+      session.recordRequest(requestDetails);
 
       console.log(
         '%s %s: from %s (%s)',
         requestDetails.method,
         requestDetails.url,
         requestDetails.remoteAddress,
-        profileDirName,
+        useragentId,
       );
 
       const handler = server.handler(requestUrl.pathname);

@@ -1,8 +1,8 @@
 import IRequestContext from '@double-agent/collect/interfaces/IRequestContext';
 import windowKeysScript from './windowKeysScript';
 import Plugin from "../../lib/Plugin";
-import Page from "../../lib/Page";
-import IWindowKeysProfile from "./interfaces/IWindowKeysProfile";
+import Document from "../../lib/Document";
+import { IWindowKeysProfileData } from "./interfaces/IWindowKeysProfile";
 
 export default class BrowserDomPlugin extends Plugin {
   public initialize() {
@@ -12,14 +12,14 @@ export default class BrowserDomPlugin extends Plugin {
   }
 
   public async loadScript(ctx: IRequestContext) {
-    const page = new Page(ctx);
-    page.injectScript(windowKeysScript(ctx));
-    ctx.res.end(page.html);
+    const document = new Document(ctx);
+    document.injectScript(windowKeysScript(ctx));
+    ctx.res.end(document.html);
   }
 
   async save(ctx: IRequestContext) {
-    const profile = ctx.requestDetails.bodyJson as IWindowKeysProfile;
-    ctx.session.savePluginProfile(this, profile);
+    const profileData = ctx.requestDetails.bodyJson as IWindowKeysProfileData;
+    ctx.session.savePluginProfileData<IWindowKeysProfileData>(this, profileData);
     ctx.res.end();
   }
 }

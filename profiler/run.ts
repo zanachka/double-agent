@@ -1,21 +1,23 @@
 import 'source-map-support/register';
 import * as Path from 'path';
+import * as Fs from 'fs';
 import IAssignment from '@double-agent/runner/interfaces/IAssignment';
 import Queue from 'p-queue';
 import fetch from 'node-fetch';
+import unzipper from 'unzipper';
 import BrowserStack from './lib/BrowserStack';
 import runAssignmentInWebDriver from './lib/runAssignmentInWebDriver';
 import IBrowserstackAgent from './interfaces/IBrowserstackAgent';
 import { WebDriver } from 'selenium-webdriver';
-import ProfilerData from './data';
-import Browsers from './lib/Browsers';
-import Oses from './lib/Oses';
-import unzipper from 'unzipper';
-import { getProfileDirName } from './index';
+import Profiler from './index';
+import UserAgentsToTest from './lib/UserAgentsToTest';
+import { createUseragentIdFromKeys } from './index';
+import RealUserAgents from "@double-agent/real-user-agents";
+
+const EXPECTED_FILE_COUNT = 9;
 
 const runnerDomain = 'da-collect.ulixee.org';
 const runnerPort = 3000;
-
 const drivers: WebDriver[] = [];
 
 process.on('exit', () => {
@@ -23,45 +25,52 @@ process.on('exit', () => {
 });
 
 (async () => {
-  let count = 0;
-  const browsers = new Browsers();
-  const oses = new Oses();
+  let totalCount = 0;
   const queue = new Queue({ concurrency: 5 });
-  for (const browser of browsers.toArray()) {
+
+  for (const userAgentToTest of UserAgentsToTest.all()) {
+    const browser = RealUserAgents.getBrowser(userAgentToTest.browserId);
+    const operatingSystem = RealUserAgents.getOperatingSystem(userAgentToTest.operatingSystemId);
+
     if (browser.name === 'IE' || (browser.name === 'Chrome' && Number(browser.version.major) < 58)) {
       // no support for Promises, lambdas... detections need refactor for support
-      console.log("DoubleAgent doesn't support", browser.key);
+      console.log("DoubleAgent doesn't support", browser.id);
       continue;
     }
-    for (const browserOs of Object.values(browser.byOsKey)) {
-      if (!browserOs.hasBrowserStackSupport) {
-        console.log("BrowserStack doesn't support", browser.key, browserOs.key);
+
+    const useragentId = createUseragentIdFromKeys(operatingSystem.id, browser.id);
+    if (Profiler.useragentIds.includes(useragentId)) {
+      const filesDir = extractFilesDir(useragentId);
+      const filesCount = Fs.readdirSync(filesDir).length;
+      if (filesCount === EXPECTED_FILE_COUNT) {
+        console.log('Profile exists', useragentId);
         continue;
+      } else {
+        console.log('Profile exists but is missing files... rerunning', useragentId);
+        Fs.rmdirSync(filesDir, { recursive: true });
       }
-
-      const os = oses.getByKey(browserOs.key);
-      const profileDirName = getProfileDirName(os, browser);
-      count += 1;
-
-      if (ProfilerData.profileDirNames.includes(profileDirName)) {
-        console.log('Profile exists', profileDirName);
-        continue;
-      }
-
-      const browserStackAgent = BrowserStack.createAgent(browser, os);
-      queue.add(getRunnerForAgent(browserStackAgent, profileDirName));
     }
+
+    const browserStackAgent = await BrowserStack.createAgent(operatingSystem, browser);
+    if (!browserStackAgent) {
+      console.log("BrowserStack doesn't support", browser.id, operatingSystem.id);
+      continue;
+    }
+
+    queue.add(getRunnerForAgent(browserStackAgent, useragentId));
+    totalCount += 1;
   }
+
   await queue.onIdle();
 
   console.log(''.padEnd(100, '-'));
-  console.log(`${count} browser profiles`);
+  console.log(`${totalCount} browser profiles`);
   console.log(''.padEnd(100, '-'));
 })();
 
-function getRunnerForAgent(agent: IBrowserstackAgent, profileDirName: string) {
+function getRunnerForAgent(agent: IBrowserstackAgent, useragentId: string) {
   return async function runnerForAgent() {
-    const scraperName = profileDirName;
+    const scraperName = useragentId;
     const { assignment } = await assignmentServer<IAssignment>('/', {
       scraperName,
       dataDir: 'download',
@@ -71,7 +80,7 @@ function getRunnerForAgent(agent: IBrowserstackAgent, profileDirName: string) {
     const driver = await BrowserStack.buildWebDriver(agent);
     drivers.push(driver);
     try {
-      await runAssignmentInWebDriver(driver, assignment, agent.browserName, agent.browser_version);
+      await runAssignmentInWebDriver(driver, assignment, agent.browser, agent.browser_version);
     } catch (error) {
       console.log(error);
     } finally {
@@ -82,10 +91,24 @@ function getRunnerForAgent(agent: IBrowserstackAgent, profileDirName: string) {
 
     console.log(`DOWNLOADING ${scraperName}`);
     const filesStream = await assignmentServer<any>(`/download/${assignment.id}`, { scraperName });
-    const filesDir = Path.resolve(__dirname, `data/profiles/${profileDirName}`);
-    filesStream.pipe(unzipper.Extract({ path: filesDir }));
-    console.log(`FINISHING DOWNLOADING ${scraperName}`);
+    const filesDir = extractFilesDir(useragentId);
+    if (!Fs.existsSync(filesDir)) Fs.mkdirSync(filesDir, { recursive: true });
+
+    console.log(`DOWNLOADING ${scraperName}`);
+    return new Promise(resolve => {
+      filesStream.pipe(unzipper.Extract({ path: filesDir }));
+      filesStream.on('finish', () => {
+        console.log(`FINISHED DOWNLOADING ${scraperName}`);
+        resolve();
+      });
+    });
   }
+}
+
+function extractFilesDir(useragentId: string) {
+  const matches = useragentId.match(/^(.+)-([0-9+])$/).slice(1);
+  const [useragentIdWithoutMinor, minorVersion] = matches;
+  return Path.resolve(__dirname, `data/profiles/${useragentIdWithoutMinor}/${minorVersion}`);
 }
 
 async function assignmentServer<T = any>(path: string, params: { scraperName: string, dataDir?: string }) {

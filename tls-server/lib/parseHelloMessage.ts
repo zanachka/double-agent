@@ -1,4 +1,6 @@
 import extensions from '../spec/extensions.json';
+import IClientHello from "../interfaces/IClientHello";
+import IServerHello from "../interfaces/IServerHello";
 
 export default function parseHelloMessage(isClientHello: boolean, lines: string[]) {
   const message = isClientHello
@@ -104,41 +106,6 @@ export default function parseHelloMessage(isClientHello: boolean, lines: string[
     }
   }
   return message;
-}
-
-interface IHello {
-  type: string;
-  version: string;
-  random: {
-    unixTime: string;
-    randomBytes: string;
-  };
-  sessionId: string;
-  extensions: {
-    type: string;
-    decimal: number;
-    values: string[];
-  }[];
-}
-
-export interface IClientHello extends IHello {
-  type: 'ClientHello';
-  ciphers: string[];
-  compressionMethods: string[];
-}
-
-export interface IServerHello extends IHello {
-  type: 'ServerHello';
-  cipher: string;
-  compressionMethod: string;
-}
-
-export interface IHeader {
-  from: 'client' | 'server';
-  version: string;
-  contentType: string;
-  length: string;
-  content: IClientHello | IServerHello | string;
 }
 
 const greaseCodes = [

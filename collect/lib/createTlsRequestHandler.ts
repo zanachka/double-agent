@@ -16,10 +16,11 @@ export default function createTlsRequestHandler(server: BaseServer, serverContex
       throw new Error('Invalid domain used to access site');
     }
 
-    const { requestDetails } = await extractRequestDetails(server, req, new Date());
-    const session = sessionTracker.recordRequest(requestDetails, requestUrl);
+    const session = sessionTracker.getSessionFromServerRequest(server, req);
+    const { requestDetails } = await extractRequestDetails(server, req, session);
     const ctx = new RequestContext(server, req, res, requestUrl, requestDetails, session);
     const handler = server.handler(requestUrl.pathname);
+    session.recordRequest(requestDetails);
 
     if (handler) {
       await handler(ctx)

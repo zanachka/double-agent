@@ -2,13 +2,13 @@
   "id": 0,
   "useragent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36",
   "pickType": [
-    "majority"
+    "popular"
   ],
   "usagePercent": {
-    "majority": 28,
+    "popular": 28,
     "random": 0
   },
-  "profileDirName": "windows-10--chrome-83-0",
+  "useragentId": "windows-10--chrome-83-0",
   "sessionId": "1",
   "pagesByPlugin": {
     "browser-codecs": [

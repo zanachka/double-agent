@@ -5,7 +5,7 @@ import ResourceType from '../interfaces/ResourceType';
 import extractRequestDetails from './extractRequestDetails';
 import RequestContext from '../lib/RequestContext';
 import IServerContext from '../interfaces/IServerContext';
-import { getProfileDirNameFromUseragent } from '@double-agent/profiler';
+import { createUseragentId } from '@double-agent/profiler';
 import BaseServer from "../servers/BaseServer";
 
 export default function createWebsocketHandler(server: BaseServer, detectionContext: IServerContext) {
@@ -13,21 +13,18 @@ export default function createWebsocketHandler(server: BaseServer, detectionCont
 
   return async function websocketHandler(req: http.IncomingMessage, socket: net.Socket, head) {
     const { sessionTracker } = detectionContext;
-    const { requestDetails, requestUrl } = await extractRequestDetails(
-      server,
-      req,
-      new Date(),
-      ResourceType.WebsocketUpgrade,
-    );
+    const session = sessionTracker.getSessionFromServerRequest(server, req);
+    const { requestDetails, requestUrl } = await extractRequestDetails(server, req, session, ResourceType.WebsocketUpgrade);
+    session.recordRequest(requestDetails);
+
     console.log(
       '%s %s: from %s (%s) %s',
       requestDetails.method,
       requestDetails.url,
       requestDetails.remoteAddress,
-      getProfileDirNameFromUseragent(req.headers['user-agent']),
+      createUseragentId(req.headers['user-agent']),
     );
 
-    const session = sessionTracker.recordRequest(requestDetails, requestUrl);
     const ctx = new RequestContext(server, req, null, requestUrl, requestDetails, session);
 
     // ToDo: route request to Plugin handler

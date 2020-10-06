@@ -1,9 +1,9 @@
 import IRequestContext from '@double-agent/collect/interfaces/IRequestContext';
 import IWebRTCCodec from './interfaces/IWebRTCCodec';
-import ICodecProfile from './interfaces/ICodecProfile';
+import { ICodecProfileData } from './interfaces/ICodecProfile';
 import codecPageScript from './codecPageScript';
 import Plugin from "../../lib/Plugin";
-import Page from "../../lib/Page";
+import Document from "../../lib/Document";
 
 export default class BrowserCodecsPlugin extends Plugin {
   public initialize() {
@@ -13,19 +13,19 @@ export default class BrowserCodecsPlugin extends Plugin {
   }
 
   private loadScript(ctx: IRequestContext) {
-    const page = new Page(ctx);
-    page.injectScript(codecPageScript(ctx));
-    ctx.res.end(page.html);
+    const document = new Document(ctx);
+    document.injectScript(codecPageScript(ctx));
+    ctx.res.end(document.html);
   }
 
   public async save(ctx: IRequestContext) {
-    const profile = cleanProfile(ctx.requestDetails.bodyJson as ICodecProfile);
-    ctx.session.savePluginProfile<ICodecProfile>(this, profile);
+    const profileData = cleanProfileData(ctx.requestDetails.bodyJson as ICodecProfileData);
+    ctx.session.savePluginProfileData<ICodecProfileData>(this, profileData);
     ctx.res.end();
   }
 }
 
-function cleanProfile(profile: ICodecProfile) {
+function cleanProfileData(profile: ICodecProfileData) {
   profile.audioSupport.probablyPlays.sort();
   profile.audioSupport.maybePlays.sort();
   profile.audioSupport.recordingFormats.sort();

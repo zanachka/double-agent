@@ -10,8 +10,8 @@ This version of Double Agent tests how many ways scrapers can be detected when e
 
 Scrapers often choose a strategy of rotating user agents using a library, or picking a few popular browsers and rotating between those. This suite tests both strategies.
 
-1. **Intoli:** randomly generated useragents using the Intoli [user-agents](https://github.com/intoli/user-agents) package
-2. **Majority:** rotate between the useragents that comprise more than 50% of web traffic according to [StatCounter.com](https://gs.statcounter.com/)
+1. **Random:** randomly generated useragents using the Intoli [user-agents](https://github.com/intoli/user-agents) package
+2. **Popular:** rotate between the useragents that comprise more than 50% of web traffic according to [StatCounter.com](https://gs.statcounter.com/)
 
 For a dynamic approach to exploring results, visit [State of Scraping](https://stateofscraping.org).
 

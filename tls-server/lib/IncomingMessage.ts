@@ -1,16 +1,7 @@
 import {IncomingHttpHeaders} from "http";
-import ITlsResult from "../interfaces/ITlsResult";
-import {IClientHello} from "./parseHelloMessage";
+import IClientHello from "../interfaces/IClientHello";
 
-export default class IncomingMessage implements ITlsResult {
-  readonly hasGrease?: boolean;
-  readonly reason?: string;
-  readonly ja3Extended?: string;
-  readonly ja3ExtendedMd5?: string;
-  readonly ja3?: string;
-  readonly ja3Md5?: string;
-  readonly ja3MatchFor?: string[];
-  readonly ja3erMatchFor?: string;
+export default class IncomingMessage {
   readonly clientHello?: IClientHello;
 
   readonly connectionId: string;

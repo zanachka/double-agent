@@ -25,6 +25,7 @@ async function runPagesInPuppeteer(pages: ISessionPage[], puppPage: puppeteer.Pa
   for (const page of pages) {
     console.log(''.padEnd(100, '-'));
     console.log(`RUNNING: `, page);
+    if (page.isRedirect) continue;
     if (page.url !== puppPage.url()) {
       console.log('- goto ', page.url);
       await puppPage.goto(page.url, { waitUntil: 'networkidle0' });

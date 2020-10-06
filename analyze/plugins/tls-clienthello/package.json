@@ -1,0 +1,10 @@
+{
+  "name": "@double-agent/analyze-tls-clienthello",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "description": "Looks at the tls handshake and compares to the proposed user agent OS",
+  "dependencies": {
+    "source-map-support": "^0.5.16"
+  }
+}

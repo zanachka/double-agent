@@ -1,6 +1,5 @@
 import * as Fs from 'fs';
 import 'source-map-support/register';
-import getAllProfiles, { equalSupport, equalWebRtcCodecs } from '@double-agent/browser-codecs/lib/CodecProfile';
 import ICodecProfile from '@double-agent/browser-codecs/interfaces/ICodecProfile';
 import { lookup } from 'useragent';
 import emulators from '../emulators.json';
@@ -56,4 +55,19 @@ export default async function exportCodecProfiles() {
     if (!Fs.existsSync(basePath)) Fs.mkdirSync(basePath, { recursive: true });
     Fs.writeFileSync(basePath + '/codecs.json', JSON.stringify(profile, null, 2));
   }
+}
+
+export function equalWebRtcCodecs(a: IWebRTCCodec[], b: IWebRTCCodec[]) {
+  if (a.length !== b.length) return false;
+  const aMap = [...new Set(a.map(x => x.mimeType ?? (x as any).name))].sort().toString();
+  const bMap = [...new Set(b.map(x => x.mimeType ?? (x as any).name))].sort().toString();
+
+  return aMap === bMap;
+}
+
+export function equalSupport(a: ICodecSupport, b: ICodecSupport) {
+  if (a.maybePlays.toString() !== b.maybePlays.toString()) return false;
+  if (a.probablyPlays.toString() !== b.probablyPlays.toString()) return false;
+  if (a.recordingFormats.toString() !== b.recordingFormats.toString()) return false;
+  return true;
 }

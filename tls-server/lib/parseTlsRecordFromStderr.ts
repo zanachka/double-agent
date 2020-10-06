@@ -1,4 +1,5 @@
-import parseHelloMessage, { IHeader } from './parseHelloMessage';
+import parseHelloMessage from './parseHelloMessage';
+import IHeader from "../interfaces/IHeader";
 
 interface IRecord {
   header: IHeader;

@@ -1,6 +1,6 @@
 import Plugin from "../../lib/Plugin";
 import IRequestTlsContext from "../../interfaces/IRequestTlsContext";
-import ITlsResult from "@double-agent/tls-server/interfaces/ITlsResult";
+import {ITlsClienthelloProfileData} from "./interfaces/ITlsClienthelloProfile";
 
 export default class TlsClienthelloPlugin extends Plugin {
   public initialize() {
@@ -9,31 +9,11 @@ export default class TlsClienthelloPlugin extends Plugin {
   }
 
   public async save(ctx: IRequestTlsContext) {
-    const {
-      hasGrease,
-      reason,
-      ja3Extended,
-      ja3ExtendedMd5,
-      ja3,
-      ja3Md5,
-      ja3MatchFor,
-      ja3erMatchFor,
-      clientHello,
-    } = ctx.req;
-
-    const profile = {
-      hasGrease,
-      reason,
-      ja3Extended,
-      ja3ExtendedMd5,
-      ja3,
-      ja3Md5,
-      ja3MatchFor,
-      ja3erMatchFor,
-      clientHello,
+    const profileData = {
+      clientHello: ctx.req.clientHello,
     }
 
-    ctx.session.savePluginProfile<ITlsResult>(this, profile);
+    ctx.session.savePluginProfileData<ITlsClienthelloProfileData>(this, profileData);
     ctx.res.end('Done');
   }
 }

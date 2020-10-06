@@ -1,0 +1,12 @@
+{
+  "name": "@double-agent/analyze-browser-window-keys",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "description": "Ensures the main window objects exist",
+  "dependencies": {
+    "useragent": "^2.3.0",
+    "csv-parse": "^4.8.5",
+    "source-map-support": "^0.5.16"
+  }
+}

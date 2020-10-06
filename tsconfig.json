@@ -19,7 +19,6 @@
     "*.d.ts",
     "*.js",
     "./emulation-generator",
-    "./analyze",
     "./docs",
     "-collect-plugins",
     "-analyze-plugins"

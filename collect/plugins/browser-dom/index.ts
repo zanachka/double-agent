@@ -1,8 +1,8 @@
 import IRequestContext from '@double-agent/collect/interfaces/IRequestContext';
 import domScript from './domScript';
-import IDomProfile from './interfaces/IDomProfile';
+import { IDomProfileData } from './interfaces/IDomProfile';
 import Plugin from "../../lib/Plugin";
-import Page from "../../lib/Page";
+import Document from "../../lib/Document";
 
 export default class BrowserDomPlugin extends Plugin {
   public initialize() {
@@ -12,14 +12,14 @@ export default class BrowserDomPlugin extends Plugin {
   }
 
   private loadScript(ctx: IRequestContext) {
-    const page = new Page(ctx);
-    page.injectScript(domScript(ctx));
-    ctx.res.end(page.html);
+    const document = new Document(ctx);
+    document.injectScript(domScript(ctx));
+    ctx.res.end(document.html);
   }
 
   public async save(ctx: IRequestContext) {
-    const profile = ctx.requestDetails.bodyJson as IDomProfile;
-    ctx.session.savePluginProfile<IDomProfile>(this, profile);
+    const profileData = ctx.requestDetails.bodyJson as IDomProfileData;
+    ctx.session.savePluginProfileData<IDomProfileData>(this, profileData);
     ctx.res.end();
   }
 }

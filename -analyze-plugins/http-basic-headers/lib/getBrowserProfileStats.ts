@@ -4,7 +4,7 @@ import { headerCaseTest } from './generateXhrTests';
 import HeaderProfile from './HeaderProfile';
 import OriginType, { getOriginType } from '@double-agent/runner/interfaces/OriginType';
 import ResourceType, { getResourceType } from '@double-agent/runner/interfaces/ResourceType';
-import { getProfileDirNameFromUseragent } from '@double-agent/profiler';
+import { createUseragentId } from '@double-agent/profiler';
 
 export default function getBrowserProfileStats() {
   const statsByResourceType: {
@@ -36,17 +36,17 @@ export default function getBrowserProfileStats() {
       }
       const statEntry = statsByResourceType[statsType];
       let record = statEntry[defaultKeysOrder];
-      const profileDirName = getProfileDirNameFromUseragent(profile.useragent);
+      const useragentId = createUseragentId(profile.useragent);
 
       if (!record) {
-        record = { browsers: [profileDirName], urls: [entry.url] };
+        record = { browsers: [useragentId], urls: [entry.url] };
         statEntry[defaultKeysOrder] = record;
       } else {
         if (!record.urls.includes(entry.url)) {
           record.urls.push(entry.url);
         }
-        if (!record.browsers.includes(profileDirName)) {
-          record.browsers.push(profileDirName);
+        if (!record.browsers.includes(useragentId)) {
+          record.browsers.push(useragentId);
         }
       }
 
@@ -56,11 +56,11 @@ export default function getBrowserProfileStats() {
       if (!statsByUrl[entry.url][defaultKeysOrder]) {
         statsByUrl[entry.url][defaultKeysOrder] = [];
       }
-      if (!statsByUrl[entry.url][defaultKeysOrder].includes(profileDirName)) {
-        statsByUrl[entry.url][defaultKeysOrder].push(profileDirName);
+      if (!statsByUrl[entry.url][defaultKeysOrder].includes(useragentId)) {
+        statsByUrl[entry.url][defaultKeysOrder].push(useragentId);
       }
 
-      const browserKey = profileDirName.split('__').pop();
+      const browserKey = useragentId.split('__').pop();
       if (!statsByBrowserKey[browserKey]) {
         statsByBrowserKey[browserKey] = {};
       }

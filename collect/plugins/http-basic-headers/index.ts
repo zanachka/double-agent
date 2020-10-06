@@ -1,10 +1,8 @@
 import Plugin, {IPluginPage} from "../../lib/Plugin";
 import {CrossDomain, MainDomain, SubDomain} from "../../index";
 import IRequestContext from "../../interfaces/IRequestContext";
-import Page from "../../lib/Page";
-import {DomainType} from "../../lib/DomainUtils";
-import OriginType from "../../interfaces/OriginType";
-import {IServerProtocol} from "../../servers/BaseServer";
+import Document from "../../lib/Document";
+import { IBasicHeadersProfileData } from "./interfaces/IBasicHeadersProfile";
 
 export default class HttpHeadersPlugin extends Plugin {
   public initialize() {
@@ -21,14 +19,14 @@ export default class HttpHeadersPlugin extends Plugin {
 
     ['http', 'https'].forEach(protocol => {
       pages.push(
-          { route: this.routes[protocol]['/start'], domain: MainDomain, clickNext: true },
+          { route: this.routes[protocol]['/start'], domain: MainDomain, clickNext: true, name: 'LoadedDirect' },
           { route: this.routes[protocol]['/referToNext'], domain: CrossDomain, clickNext: true },
-          { route: this.routes[protocol]['/page1'], domain: MainDomain, clickNext: true },
-          { route: this.routes[protocol]['/useJsToLoadNextPage'], domain: MainDomain },
-          { route: this.routes[protocol]['/page2'], domain: MainDomain, clickNext: true },
-          { route: this.routes[protocol]['/redirectToNextPage'], domain: MainDomain, bypassWait: true },
-          { route: this.routes[protocol]['/page3'], domain: MainDomain, clickNext: true },
-          { route: this.routes[protocol]['/page2'], domain: MainDomain, clickNext: true },
+          { route: this.routes[protocol]['/page1'], domain: MainDomain, clickNext: true, name: 'ClickedFromCrossDomain' },
+          { route: this.routes[protocol]['/useJsToLoadNextPage'], domain: MainDomain, isRedirect: true, name: 'ClickedFromSameDomain' },
+          { route: this.routes[protocol]['/page2'], domain: MainDomain, clickNext: true, name: 'JsRedirectedFromSameDomain' },
+          { route: this.routes[protocol]['/redirectToNextPage'], domain: MainDomain, isRedirect: true },
+          { route: this.routes[protocol]['/page3'], domain: MainDomain, clickNext: true, name: 'RedirectedFromSameDomain' },
+          { route: this.routes[protocol]['/page2'], domain: MainDomain, clickNext: true, name: 'LoadedSamePageAgain' },
           { route: this.routes[protocol]['/gotoNext'], domain: MainDomain, waitForReady: true },
       );
     });
@@ -37,42 +35,41 @@ export default class HttpHeadersPlugin extends Plugin {
   }
 
   public linkToNextPage(ctx: IRequestContext) {
-    const page = new Page(ctx);
-    page.addNextPageClick();
-    ctx.res.end(page.html);
+    const document = new Document(ctx);
+    document.addNextPageClick();
+    ctx.res.end(document.html);
   }
 
   public showGotoNextPage(ctx: IRequestContext) {
-    const page = new Page(ctx);
-    ctx.res.end(page.html);
+    const document = new Document(ctx);
+    ctx.res.end(document.html);
   }
 
   public saveAndLinkToNextPage(ctx: IRequestContext) {
-    const page = new Page(ctx);
-    page.addNextPageClick();
+    const document = new Document(ctx);
+    document.addNextPageClick();
     saveHeadersToProfile(this, ctx);
-    ctx.res.end(page.html);
+    ctx.res.end(document.html);
   }
 
   public saveAndRedirectToNextPage(ctx: IRequestContext) {
     ctx.res.writeHead(302, { location: ctx.nextPageLink });
-    saveHeadersToProfile(this, ctx);
     ctx.res.end();
   }
 
   public saveAndUseJsToLoadNextPage(ctx: IRequestContext) {
-    const page = new Page(ctx);
-    page.injectScript(`<script type="text/javascript">
+    const document = new Document(ctx);
+    document.injectScript(`<script type="text/javascript">
       (function() {
         window.afterReady = () => {
           setTimeout(() => {
             window.location.href = '${ctx.nextPageLink}';  
-          }, 1e3);
+          }, 2e3);
         }
       })();
     </script>`);
     saveHeadersToProfile(this, ctx);
-    ctx.res.end(page.html);
+    ctx.res.end(document.html);
   }
 }
 
@@ -81,20 +78,16 @@ export default class HttpHeadersPlugin extends Plugin {
 function saveHeadersToProfile(plugin: Plugin, ctx: IRequestContext) {
   const pathname = ctx.url.pathname;
   const { domainType, originType, method, referer } = ctx.requestDetails;
-  const rawHeaders = ctx.req.rawHeaders;
   const protocol = ctx.server.protocol;
+  const pageName = ctx.page.name;
+  const rawHeaders: string[][] = [];
+  for (let i = 0; i < ctx.req.rawHeaders.length; i += 2) {
+    const key = ctx.req.rawHeaders[i];
+    const value = ctx.req.rawHeaders[i+1];
+    rawHeaders.push([key, value]);
+  }
 
-  const profile = ctx.session.getPluginProfile<IBasicHeadersProfile[]>(plugin, []);
-  profile.push({ method, protocol, domainType, originType, pathname, referer, rawHeaders });
-  ctx.session.savePluginProfile(plugin, profile, true);
-}
-
-interface IBasicHeadersProfile {
-  method: string;
-  protocol: IServerProtocol;
-  domainType: DomainType;
-  originType: OriginType;
-  pathname: string;
-  referer: string;
-  rawHeaders: string[];
+  const profileData = ctx.session.getPluginProfileData<IBasicHeadersProfileData>(plugin, []);
+  profileData.push({ pageName, method, protocol, domainType, originType, pathname, referer, rawHeaders });
+  ctx.session.savePluginProfileData<IBasicHeadersProfileData>(plugin, profileData, true);
 }

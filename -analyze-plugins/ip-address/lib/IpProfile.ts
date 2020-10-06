@@ -2,7 +2,7 @@ import OriginType from '@double-agent/runner/interfaces/OriginType';
 import ResourceType from '@double-agent/runner/interfaces/ResourceType';
 import IRequestContext from '@double-agent/runner/interfaces/IRequestContext';
 import { inspect } from 'util';
-import ProfilerData from '@double-agent/profiler/data';
+import Profiler from '@double-agent/profiler';
 
 const pluginId = 'ip/address';
 
@@ -12,7 +12,7 @@ export default class IpProfile {
   public save() {
     if (!process.env.GENERATE_PROFILES) return;
     const data = { useragent: this.useragent, requests: this.requests } as IIpProfile;
-    ProfilerData.saveProfile(pluginId, this.useragent, data);
+    Profiler.saveProfile(pluginId, this.useragent, data);
   }
 
   public static fromContext(ctx: IRequestContext) {
@@ -125,7 +125,7 @@ export default class IpProfile {
   }
 
   public static getAllProfiles(): IIpProfile[] {
-    return ProfilerData.getByPluginId(pluginId);
+    return Profiler.getProfiles(pluginId);
   }
 }
 

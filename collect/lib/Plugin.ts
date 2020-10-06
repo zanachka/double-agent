@@ -1,18 +1,19 @@
 import * as Path from 'path';
 import IPlugin from "../interfaces/IPlugin";
 import IRequestContext from "../interfaces/IRequestContext";
-import { IServerProtocol } from "../servers/BaseServer";
+import {IServerProtocol} from "../servers/BaseServer";
 import TlsServer from "../servers/TlsServer";
 import HttpServer from "../servers/HttpServer";
 import HttpsServer from "../servers/HttpsServer";
-import SessionTracker from "./SessionTracker";
-import PluginDelegate from "./PluginDelegate";
 import IServerContext from "../interfaces/IServerContext";
 import {URL} from "url";
 import {MainDomain, TlsDomain} from "../index";
 import ISessionPage from "../interfaces/ISessionPage";
-import { addPageIndexToUrl, addSessionIdToUrl } from "./DomainUtils";
-import Page from "./Page";
+import {addPageIndexToUrl, addSessionIdToUrl} from "./DomainUtils";
+import Document from "./Document";
+import EventEmitter from 'events';
+import {AssignmentType} from "@double-agent/runner/interfaces/IAssignment";
+import Session from "./Session";
 
 type IHandler = (ctx: IRequestContext) => Promise<void> | void;
 type IFlexibleServerProtocol = IServerProtocol | 'all';
@@ -32,25 +33,36 @@ export interface IPluginPage {
   domain?: string;
   clickNext?: boolean;
   waitForReady?: boolean;
-  bypassWait?: boolean;
+  isRedirect?: boolean;
+  name?: string;
+  data?: any;
 }
 
 const releasedPorts: number[] = [];
 let portCounter = Number(process.env.STARTING_PORT ?? 3001);
 
-export default abstract class Plugin implements IPlugin {
+interface IPagesByAssignmentType {
+  [AssignmentType.Individual]: IPluginPage[];
+  [AssignmentType.OverTime]: IPluginPage[];
+}
+
+export default abstract class Plugin extends EventEmitter implements IPlugin {
   public id: string;
   public dir: string;
   public summary: string;
-  public pages: IPluginPage[] = [];
+  public pagesByAssignmentType: IPagesByAssignmentType = {
+    [AssignmentType.Individual]: [],
+    [AssignmentType.OverTime]: [],
+  };
 
   protected routes: { [protocol: string]: { [path: string]: IRoute } } = {};
 
-  private httpServer: HttpServer;
-  private httpsServer: HttpsServer;
-  private tlsServerBySessionId: { [sessionId: string]: TlsServer } = {};
+  protected httpServer: HttpServer;
+  protected httpsServer: HttpsServer;
+  protected tlsServerBySessionId: { [sessionId: string]: TlsServer } = {};
 
   constructor(pluginDir: string) {
+    super();
     this.dir = pluginDir;
     this.id = Path.basename(pluginDir);
     const packageJson = require(`${pluginDir}/package.json`);
@@ -62,9 +74,9 @@ export default abstract class Plugin implements IPlugin {
 
   abstract initialize(): void;
 
-  public pagesForSession(sessionId: string): ISessionPage[] {
-    return this.pages.map((page: IPluginPage, pageIndex: number) => {
-      return this.convertToSessionPage(page, sessionId, pageIndex);
+  public pagesForSession(session: Session): ISessionPage[] {
+    return this.pagesByAssignmentType[session.assignmentType].map((page: IPluginPage, pageIndex: number) => {
+      return this.convertToSessionPage(page, session.id, pageIndex);
     });
   }
 
@@ -81,29 +93,36 @@ export default abstract class Plugin implements IPlugin {
 
     const sessionPage: ISessionPage = {url};
     if (page.waitForReady || page.clickNext) {
-      sessionPage.waitForElementSelector = Page.waitForElementSelector;
+      sessionPage.waitForElementSelector = Document.waitForElementSelector;
     }
 
-    if (page.bypassWait) {
-      sessionPage.bypassWait = page.bypassWait;
+    if (page.isRedirect) {
+      sessionPage.isRedirect = page.isRedirect;
     }
 
     if (page.clickNext) {
-      sessionPage.clickElementSelector = Page.clickElementSelector;
+      sessionPage.clickElementSelector = Document.clickElementSelector;
     }
-
-    // for (const page of assignment.pages) {
-    //   page.clickDestinationUrl = addSessionIdToUrl(page.clickDestinationUrl, session.id);
-    // }
 
     return sessionPage;
   }
 
-  public async createServersForSession(sessionId: string, sessionTracker: SessionTracker, pluginDelegate: PluginDelegate) {
+  public async createServersForSession(session: Session) {
+    if (!this.pagesByAssignmentType[session.assignmentType].length) return;
+    const  { sessionTracker, pluginDelegate } = session;
     const serverContext = { sessionTracker, pluginDelegate, plugin: this };
     for (const [protocol, routesByPath] of Object.entries(this.routes)) {
-      await this.createServer(protocol as IServerProtocol, serverContext, sessionId, routesByPath);
+      await this.createServer(protocol as IServerProtocol, serverContext, session.id, routesByPath);
     }
+  }
+
+  public onServerStart(protocol: IServerProtocol, callback: () => void) {
+    this.once(`${protocol}-started`, callback);
+  }
+
+
+  public onServerStop(protocol: IServerProtocol, callback: () => void) {
+    this.once(`${protocol}-stopped`, callback);
   }
 
   public async closeServersForSession(sessionId: string) {
@@ -141,6 +160,7 @@ export default abstract class Plugin implements IPlugin {
       this.httpsServer = await new HttpsServer(port, routesByPath).start(serverContext);
       console.log(`${this.id} listening on ${port} (HTTPS)`);
     }
+    this.emit(`${protocol}-started`);
   }
 
   protected registerRoute(protocol: IFlexibleServerProtocol, path: string, handler: IHandler) {
@@ -157,7 +177,11 @@ export default abstract class Plugin implements IPlugin {
   }
 
   protected registerPages(...pages: IPluginPage[]) {
-    this.pages = pages;
+    this.pagesByAssignmentType[AssignmentType.Individual] = pages;
+  }
+
+  protected registerPagesOverTime(...pages: IPluginPage[]) {
+    this.pagesByAssignmentType[AssignmentType.OverTime] = pages;
   }
 }
 

@@ -1,9 +1,12 @@
 import * as fs from 'fs';
 import IRequestContext from '@double-agent/collect/interfaces/IRequestContext';
-import IFingerprintProfile from './interfaces/IFingerprintProfile';
-import fingerprintScript, { browserIgnoredAttributes, sessionIgnoredAttributes } from './fingerprintScript';
+import {
+  IFingerprintProfileData,
+  IFingerprintProfileDataFingerprint
+} from './interfaces/IFingerprintProfile';
+import fingerprintScript from './fingerprintScript';
 import Plugin from '../../lib/Plugin';
-import Page from '../../lib/Page';
+import Document from '../../lib/Document';
 
 const fingerprintJs = fs.readFileSync(require.resolve('fingerprintjs2/dist/fingerprint2.min.js'));
 
@@ -13,17 +16,22 @@ export default class BrowserFingerprintPlugin extends Plugin {
     this.registerRoute('https', '/second', this.loadFingerprint);
     this.registerRoute('https', '/fingerprint.js', this.fingerprintJs);
     this.registerRoute('https', '/save', this.save);
+
     this.registerPages(
       { route: this.routes.https['/first'], waitForReady: true },
       { route: this.routes.https['/second'], waitForReady: true }
     );
+
+    this.registerPagesOverTime(
+      { route: this.routes.https['/first'], waitForReady: true }
+    );
   }
 
   private loadFingerprint(ctx: IRequestContext) {
-    const page = new Page(ctx);
-    page.injectScript(fingerprintScript(ctx));
-    page.injectHeadTag(`<script src="${ctx.buildUrl('/fingerprint.js')}" type="text/javascript"></script>`);
-    ctx.res.end(page.html);
+    const document = new Document(ctx);
+    document.injectScript(fingerprintScript(ctx));
+    document.injectHeadTag(`<script src="${ctx.buildUrl('/fingerprint.js')}" type="text/javascript"></script>`);
+    ctx.res.end(document.html);
   }
 
   async fingerprintJs(ctx: IRequestContext) {
@@ -32,13 +40,13 @@ export default class BrowserFingerprintPlugin extends Plugin {
   }
 
   async save(ctx: IRequestContext) {
-    const fingerprint = ctx.requestDetails.bodyJson as IFingerprintProfile;
+    const fingerprint = ctx.requestDetails.bodyJson as IFingerprintProfileDataFingerprint;
     const index = extractArrayIndex((fingerprint as any).originatedAt);
-    const profile = ctx.session.getPluginProfile<IFingerprintProfile[]>(this, []);
+    const profileData = ctx.session.getPluginProfileData<IFingerprintProfileData>(this, []);
     const isFirstFingerprint = index === 0;
 
-    profile[index] = fingerprint;
-    ctx.session.savePluginProfile(this, profile, isFirstFingerprint);
+    profileData[index] = fingerprint;
+    ctx.session.savePluginProfileData<IFingerprintProfileData>(this, profileData, isFirstFingerprint);
     ctx.res.end();
   }
 }

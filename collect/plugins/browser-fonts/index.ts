@@ -1,8 +1,8 @@
+import Plugin from "@double-agent/collect/lib/Plugin";
+import Document from "@double-agent/collect/lib/Document";
 import IRequestContext from '@double-agent/collect/interfaces/IRequestContext';
 import fontScript from './fontScript';
-import IFontProfile from './interfaces/IFontProfile';
-import Plugin from "../../lib/Plugin";
-import Page from "../../lib/Page";
+import { IFontProfileData } from './interfaces/IFontProfile';
 
 export default class BrowserFontsPlugin extends Plugin {
   public initialize() {
@@ -12,14 +12,14 @@ export default class BrowserFontsPlugin extends Plugin {
   }
 
   public async loadScript(ctx: IRequestContext) {
-    const page = new Page(ctx);
-    page.injectScript(fontScript(ctx));
-    ctx.res.end(page.html);
+    const document = new Document(ctx);
+    document.injectScript(fontScript(ctx));
+    ctx.res.end(document.html);
   }
 
   public async save(ctx: IRequestContext): Promise<void> {
-    const profile = ctx.requestDetails.bodyJson as IFontProfile;
-    ctx.session.savePluginProfile<IFontProfile>(this, profile);
+    const profileData = ctx.requestDetails.bodyJson as IFontProfileData;
+    ctx.session.savePluginProfileData<IFontProfileData>(this, profileData);
     ctx.res.end();
   }
 }

@@ -1,0 +1,10 @@
+{
+  "name": "@double-agent/analyze-http-cookies",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "description": "Are cookies enabled? Are same-site, secure and other cookies correctly sent?",
+  "dependencies": {
+    "source-map-support": "^0.5.16"
+  }
+}

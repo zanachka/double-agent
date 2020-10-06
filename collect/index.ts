@@ -1,6 +1,7 @@
 import 'source-map-support/register';
 import SessionTracker from './lib/SessionTracker';
 import Session from './lib/Session';
+import {IAssignmentType} from "@double-agent/runner/interfaces/IAssignment";
 
 export const MainDomain = process.env.MAIN_DOMAIN ?? 'double-agent.collect';
 export const SubDomain = process.env.SUB_DOMAIN ?? 'sub.double-agent.collect';
@@ -33,8 +34,8 @@ NOTE if not using dockers:
     );
   }
 
-  public async createSession(expectedUseragent?: string): Promise<Session> {
-    const session = await this.sessionTracker.createSession();
+  public async createSession(assignmentType: IAssignmentType, expectedUseragent?: string): Promise<Session> {
+    const session = await this.sessionTracker.createSession(assignmentType);
     session.expectedUseragent = expectedUseragent;
 
     return session;

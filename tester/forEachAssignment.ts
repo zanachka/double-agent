@@ -3,9 +3,7 @@ import * as Fs from 'fs';
 import unzipper from 'unzipper';
 import fetch from 'node-fetch';
 import IAssignment from '@double-agent/runner/interfaces/IAssignment';
-// import { inspect } from 'util';
 import Queue from 'p-queue';
-// import BotDetectionResults from './BotDetectionResults';
 
 const runnerDomain = process.env.RUNNER_DOMAIN ?? 'localhost';
 const runnerPort = 3000;
@@ -18,7 +16,6 @@ export default async function forEachAssignment(
   const queue = new Queue({ concurrency });
   const dataDir = Path.resolve(__dirname, `./data/${scraperName}`);
   const { assignments } = await assignmentServer('/create', { scraperName, dataDir });
-  // const botDetectionResults = new BotDetectionResults();
 
   if (!Fs.existsSync(dataDir)) Fs.mkdirSync(dataDir, { recursive: true });
 
@@ -29,9 +26,8 @@ export default async function forEachAssignment(
       console.log(
         '[%s._] RUNNING %s assignment (%s)',
         assignment.sessionId,
-        assignment.pickType,
-        assignment.profileDirName,
-        assignment.useragent,
+        assignment.pickTypes,
+        assignment.id,
       );
       try {
         await runAssignment(assignment);
@@ -42,17 +38,17 @@ export default async function forEachAssignment(
       } catch (error) {
         console.log('ERROR running assignment: ', error)
       }
-      // try {
-      //   const { session } = await assignmentServer(`/finish/${assignmentId}`, { scraperName });
-      //   botDetectionResults.trackAssignmentResults(assignment, session);
-      // } catch (error) {
-      //   console.log('ERROR completing: ', error)
-      // }
     });
   }
 
   await queue.onIdle();
   await assignmentServer('/finish', { scraperName });
+
+  // const analyze = new Analyze();
+  // analyze.addProfile();
+  // await analyze.results();
+  // await Analyze.run(profiles);
+
   console.log('FINISHED');
 
   // let tries = 0;
@@ -61,7 +57,7 @@ export default async function forEachAssignment(
   //   if (!pendingAssignments.length) break;
   //   tries += 1;
   //   console.log(`Waiting on ${pendingAssignments.length} of ${assignments.length} assignments`);
-  //   pendingAssignments.forEach((a: any) => console.log(`- ${a.profileDirName}`));
+  //   pendingAssignments.forEach((a: any) => console.log(`- ${a.id}`));
   //   await new Promise(resolve => setTimeout(resolve, 1e3));
   // }
 

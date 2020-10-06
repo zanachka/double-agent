@@ -4,15 +4,17 @@ import cookie from 'cookie';
 import ResourceType from '../interfaces/ResourceType';
 import IRequestDetails from '../interfaces/IRequestDetails';
 import OriginType from '../interfaces/OriginType';
-import {DomainType, getDomainType} from "./DomainUtils";
+import {cleanDomains, DomainType, getDomainType} from "./DomainUtils";
 import BaseServer from "../servers/BaseServer";
+import Session from "./Session";
 
 export default async function extractRequestDetails(
   server: BaseServer,
   req: http.IncomingMessage,
-  time: Date,
+  session: Session,
   overrideResourceType?: ResourceType,
 ) {
+  const time = new Date();
   const useragent = req.headers['user-agent'];
   const addr = req.connection.remoteAddress.split(':').pop() + ':' + req.connection.remotePort;
   const requestUrl = new URL(`${server.protocol}://${req.headers.host}${req.url}`);
@@ -37,12 +39,12 @@ export default async function extractRequestDetails(
     cookies,
     time,
     remoteAddress: addr,
-    url: requestUrl.href,
-    origin: req.headers['origin'] as string,
+    url: cleanUrl(requestUrl.href, session.id),
+    origin: cleanUrl(req.headers['origin'] as string, session.id),
     originType: OriginType.None,
-    referer: req.headers.referer,
+    referer: cleanUrl(req.headers.referer, session.id),
     method: req.method,
-    headers: rawHeaders,
+    headers: rawHeaders.map(x => cleanUrl(x, session.id)),
     domainType: getDomainType(requestUrl),
     secureDomain: ['https','tls'].includes(server.protocol),
     resourceType: overrideResourceType ?? getResourceType(req.method, requestUrl.pathname),
@@ -116,3 +118,12 @@ function parseHeaders(rawHeaders: string[]) {
   }
   return headerPrintout;
 }
+
+function cleanUrl(url: string, sessionId: string) {
+  if (!url) return url;
+
+  return cleanDomains(url)
+      .replace(RegExp(`sessionId=${sessionId}`, 'g'), 'sessionId=X')
+      .replace(RegExp(':[0-9]+/'), '/');
+}
+

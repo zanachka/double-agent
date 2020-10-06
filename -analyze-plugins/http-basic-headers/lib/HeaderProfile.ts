@@ -2,21 +2,21 @@ import OriginType from '@double-agent/runner/interfaces/OriginType';
 import ResourceType from '@double-agent/runner/interfaces/ResourceType';
 import ISession from '@double-agent/runner/interfaces/ISession';
 import IRequestDetails from '@double-agent/runner/interfaces/IRequestDetails';
-import ProfilerData from '@double-agent/profiler/data';
-import { getProfileDirNameFromUseragent } from '@double-agent/profiler';
+import Profiler from '@double-agent/profiler';
+import { createUseragentId } from '@double-agent/profiler';
 
 export default class HeaderProfile {
-  public readonly profileDirName: string;
   public readonly requests: IHeadersRequest[];
   public readonly useragent: string;
+  public readonly useragentId: string;
 
   public get browserAndVersion() {
-    return this.profileDirName.split('__').pop();
+    return this.useragentId.split('__').pop();
   }
 
   constructor(readonly session: ISession) {
     this.useragent = session.useragent;
-    this.profileDirName = getProfileDirNameFromUseragent(session.useragent);
+    this.useragentId = createUseragentId(session.useragent);
 
     this.requests = session.requests.map(x => HeaderProfile.processRequestDetails(x, session));
   }
@@ -29,7 +29,7 @@ export default class HeaderProfile {
       useragent: this.useragent,
     } as IProfile;
 
-    await ProfilerData.saveProfile('http/headers', this.useragent, data);
+    await Profiler.saveProfile('http/headers', this.useragent, data);
   }
 
   public static processRequestDetails(x: IRequestDetails, session: ISession) {
@@ -46,7 +46,7 @@ export default class HeaderProfile {
 
   public static getAllProfiles() {
     const entries: IProfile[] = [];
-    ProfilerData.getByPluginId('http/headers').forEach(entry => {
+    Profiler.getProfiles('http/headers').forEach(entry => {
       entries.push({ requests: entry.requests, useragent: entry.useragent });
     });
     return entries;

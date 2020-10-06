@@ -50,7 +50,7 @@ export default function domScript(
     const loadedObjects = new Map([[window, 'window']]);
     const hierarchyNav = new Map();
     const detached = {};
-
+    
     async function extractPropsFromObject(obj, parentPath) {
       let keys = [];
       let symbols = [];
@@ -75,32 +75,32 @@ export default function domScript(
       const protos = await loadProtoHierarchy(obj, parentPath);
       
       const newObj = {
-        _protos: protos,
+        _$protos: protos,
       };
-      if (parentPath.includes('window.document.') && !parentPath.includes('window.document.documentElement') && newObj._protos.includes('HTMLElement.prototype')) {
-        newObj._skipped = 'SKIPPED ELEMENT';
+      if (parentPath.includes('window.document.') && !parentPath.includes('window.document.documentElement') && newObj._$protos.includes('HTMLElement.prototype')) {
+        newObj._$skipped = 'SKIPPED ELEMENT';
         return newObj;
       }
       
       if (parentPath.includes('new()') && parentPath.endsWith('.ownerElement')) {
-        newObj._skipped = 'SKIPPED ELEMENT';
+        newObj._$skipped = 'SKIPPED ELEMENT';
         return newObj;
       }
     
       if (parentPath.split('.').length >= 8) {
-        newObj._skipped = 'SKIPPED MAX DEPTH';
+        newObj._$skipped = 'SKIPPED MAX DEPTH';
         return newObj;
       }
       
       const isNewObject = parentPath.includes('.new()');
-      if (isNewObject && newObj._protos[0] === 'HTMLDocument.prototype') {
-        newObj._skipped = 'SKIPPED DOCUMENT';
-        newObj._type = 'HTMLDocument.prototype';
+      if (isNewObject && newObj._$protos[0] === 'HTMLDocument.prototype') {
+        newObj._$skipped = 'SKIPPED DOCUMENT';
+        newObj._$type = 'HTMLDocument.prototype';
         return newObj;
       }
-      if (Object.isFrozen(obj)) newObj.isFrozen = true;
-      if (Object.isSealed(obj)) newObj.isSealed = true;
-      if (!newObj._protos.length) delete newObj._protos;
+      if (Object.isFrozen(obj)) newObj._$isFrozen = true;
+      if (Object.isSealed(obj)) newObj._$isSealed = true;
+      if (!newObj._$protos.length) delete newObj._$protos;
       
       for (const key of keys) {
         if (skipProps.includes(key)) {
@@ -116,25 +116,23 @@ export default function domScript(
             (typeof key === 'string' && (key.startsWith('child') || key.startsWith('first') || key.startsWith('last') || key.startsWith('next') || key.startsWith('prev') 
                 || key === 'textContent' || key === 'text'))
         ) {  
-          newObj[prop] =  { _skipped: 'SKIPPED DOM' };
+          newObj[prop] =  { _$type: 'dom', _$skipped: 'SKIPPED DOM' };
           continue;
         }
         
         if (path.startsWith('window.document') && path.split('.').length > 5) { 
-          newObj[prop] =  { _type: 'object', _skipped: 'SKIPPED DEPTH' };
+          newObj[prop] =  { _$type: 'object', _$skipped: 'SKIPPED DEPTH' };
           continue;
         }
         
         if (key === 'style') {
           if (isNewObject) {
-            newObj[prop] =  { _type: 'object', _skipped: 'SKIPPED STYLE' };
+            newObj[prop] =  { _$type: 'object', _$skipped: 'SKIPPED STYLE' };
             continue;
           }
         }
         if (hierarchyNav.has(path)) {
           newObj[prop] = hierarchyNav.get(path);
-          //const descriptor = await getDescriptor(obj, key);
-          //Object.assign(newObj[prop], descriptor);
           continue;
         }
         
@@ -155,13 +153,24 @@ export default function domScript(
           newObj[prop] = err.toString();
         }
       }
-      try {
-        if (obj.prototype) {
-          const instance = await new obj();
-          newObj['new()'] = await extractPropsFromObject(instance, parentPath + '.new()');
+      if (obj.prototype) {
+        let instance;
+        let constructorException;
+        try {
+          instance = await new obj();
+        } catch (err) {
+          constructorException = err.toString();
         }
-      } catch (err) {
-        newObj['new()'] = err.toString();
+        if (constructorException) {
+          newObj['new()'] = { _$type: 'constructor', _$constructorException: constructorException };
+        } else {
+          try {
+            newObj['new()'] = await extractPropsFromObject(instance, parentPath + '.new()');
+            newObj['new()']._$type = 'constructor';
+          } catch (err) {
+            newObj['new()'] = err.toString();
+          }
+        }
       }
       return newObj;
     }
@@ -249,9 +258,10 @@ export default function domScript(
       
       if (!Object.keys(descriptor).length && !Object.keys(details).length) return undefined;
       const prop = Object.assign(details, descriptor);
-      if (prop._value === 'REF: ' + path) {
-        prop._value = undefined;
+      if (prop._$value === 'REF: ' + path) {
+        prop._$value = undefined;
       }
+      
       return prop;
     }
 
@@ -262,7 +272,7 @@ export default function domScript(
         const plainObject = {};
         
         if (accessException && String(accessException).includes( 'Likely a Promise')) {
-          plainObject._value = 'Likely a Promise';
+          plainObject._$value = 'Likely a Promise';
         } 
         else if (accessException) return plainObject;
         let value;
@@ -274,10 +284,10 @@ export default function domScript(
         if (value && Array.isArray(value)) type = 'array';
         
         const functionDetails = await getFunctionDetails(value, obj, key, type, path);
-        plainObject._type = functionDetails.type;
-        plainObject._value = getValueString(value, key);
-        plainObject._func = functionDetails.func;
-        plainObject._invocation = functionDetails.invocation;
+        plainObject._$type = functionDetails.type;
+        plainObject._$value = getValueString(value, key);
+        plainObject._$function = functionDetails.func;
+        plainObject._$invocation = functionDetails.invocation;
         
         return plainObject;
       } else {
@@ -298,18 +308,18 @@ export default function domScript(
         if (objDesc.configurable) flags.push('c');
         if (objDesc.enumerable) flags.push('e');
         if (objDesc.writable) flags.push('w');
-       
+        
         return {
-          _type: type,
-          _function: functionDetails.func,
-          _invocation: functionDetails.invocation,
-          _flags: flags.join(''),
-          _accessException: accessException ? accessException.toString() : undefined,
-          _value: value,
-          _get: objDesc.get ? objDesc.get.toString() : undefined,
-          _set: objDesc.set ? objDesc.set.toString() : undefined,
-          _getToStringToString: objDesc.get ? objDesc.get.toString.toString() : undefined,
-          _setToStringToString: objDesc.set ? objDesc.set.toString.toString() : undefined,
+          _$type: type,
+          _$function: functionDetails.func,
+          _$invocation: functionDetails.invocation,
+          _$flags: flags,
+          _$accessException: accessException ? accessException.toString() : undefined,
+          _$value: value,
+          _$get: objDesc.get ? objDesc.get.toString() : undefined,
+          _$set: objDesc.set ? objDesc.set.toString() : undefined,
+          _$getToStringToString: objDesc.get ? objDesc.get.toString.toString() : undefined,
+          _$setToStringToString: objDesc.set ? objDesc.set.toString.toString() : undefined,
         };
       }
     }
@@ -319,7 +329,6 @@ export default function domScript(
       let invocation;
       if (type === 'undefined') type = undefined;
       if (type === 'function') {
-        type = undefined; 
         try {
           func = String(value);
         } catch (err) {
@@ -349,18 +358,17 @@ export default function domScript(
                 clearTimeout(c);
                 reject(err);
               }
-            }).catch(err => {
-              invocation = err.toString();
             });
           }
         } catch(err) {
-          invocation = err.toString();  
+          invocation = err ? err.toString() : err;
         }
       }
+      
       return {
+        type,
         func, 
         invocation: getValueString(invocation),
-        type
       }
     }
     
@@ -368,6 +376,7 @@ export default function domScript(
       if (key && skipValues.includes(key)) {
         return 'SKIPPED VALUE';
       }
+
       try {
         if (value && typeof value === 'symbol') {
           value = '' + String(value);

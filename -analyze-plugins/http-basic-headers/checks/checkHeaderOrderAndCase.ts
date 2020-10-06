@@ -29,14 +29,14 @@ export default function userHeadersWithoutCookiesAndCache(
   for (let index = 0; index < userHeaderNames.length; index += 1) {
     const headerName = userHeaderNames[index];
     const presentWithCorrectCase = expectedOrders.some(x => x.includes(headerName));
-    let presentWithIncorrectCase: string;
+    let presentRegardlessOfCase: string;
 
     for (const order of expectedOrders) {
-      presentWithIncorrectCase = order.find(y => y.toLowerCase() === headerName.toLowerCase());
-      if (presentWithIncorrectCase) break;
+      presentRegardlessOfCase = order.find(y => y.toLowerCase() === headerName.toLowerCase());
+      if (presentRegardlessOfCase) break;
     }
 
-    let isIncorrectCase = presentWithIncorrectCase && !presentWithCorrectCase;
+    let isIncorrectCase = presentRegardlessOfCase && !presentWithCorrectCase;
 
     // if casing is wrong, definitely a bot
     session.recordCheck(hasBrowserStats && isIncorrectCase, {
@@ -45,7 +45,7 @@ export default function userHeadersWithoutCookiesAndCache(
       description: `Checks that headers sent by a user agent have the correct capitalized letters for the given user agent`,
       value: headerName,
       pctBot: 100,
-      expected: presentWithIncorrectCase,
+      expected: presentRegardlessOfCase,
     });
   }
 

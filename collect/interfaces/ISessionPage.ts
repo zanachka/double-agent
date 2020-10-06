@@ -3,5 +3,5 @@ export default interface ISessionPage {
   waitForElementSelector?: string; // if user should wait for something to appear
   clickElementSelector?: string;
   clickDestinationUrl?: string; // if click loads a url, this is what it will be
-  bypassWait?: boolean;
+  isRedirect?: boolean;
 }

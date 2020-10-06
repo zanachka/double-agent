@@ -4,8 +4,8 @@ import Browsers from '@double-agent/profiler/lib/Browsers';
 import Oses from '@double-agent/profiler/lib/Oses';
 import { flaggedCheckFromRequest } from '@double-agent/runner/lib/flagUtils';
 import UserBucket from '@double-agent/runner/interfaces/UserBucket';
-import { createOsKeyFromUseragent } from '@double-agent/profiler/lib/OsUtils';
-import { createBrowserKeyFromUseragent } from '@double-agent/profiler/lib/BrowserUtils';
+import { createOsIdFromUseragent } from '@double-agent/real-user-agents/lib/OsUtils';
+import { createBrowserIdFromUseragent } from '@double-agent/real-user-agents/lib/BrowserUtils';
 
 export default class Plugin implements IDetectionPlugin {
   public async onRequest(ctx: IRequestContext) {
@@ -31,10 +31,10 @@ export default class Plugin implements IDetectionPlugin {
 
     const useragent = ctx.session.useragent;
 
-    const browserKey = createBrowserKeyFromUseragent(useragent);
+    const browserKey = createBrowserIdFromUseragent(useragent);
     const browserPct = new Browsers().getByKey(browserKey)?.desktopPercent ?? 0.1;
 
-    const osKey = createOsKeyFromUseragent(useragent);
+    const osKey = createOsIdFromUseragent(useragent);
     const osPct = new Oses().getByKey(osKey)?.desktopPercent ?? 0.1;
 
     // 2% frequency means 2 in 100 requests, ie, 50% chance a single request is a bot

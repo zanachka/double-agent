@@ -1,5 +1,4 @@
 import http from 'http';
-import { URL } from 'url';
 import createHttpRequestHandler from '../lib/createHttpRequestHandler';
 import createWebsocketHandler from '../lib/createWebsocketHandler';
 import IServerContext from "../interfaces/IServerContext";

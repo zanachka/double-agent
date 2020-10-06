@@ -1,0 +1,10 @@
+{
+  "name": "@double-agent/analyze-tcp-ttl",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "description": "Compares tcp packet values to the user agent OS",
+  "dependencies": {
+    "source-map-support": "^0.5.16"
+  }
+}

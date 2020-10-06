@@ -19,7 +19,8 @@ async function runPluginPagesInWebdriver(driver: WebDriver, pages: ISessionPage[
   let prev: ISessionPage;
   for (const page of pages) {
     let currentUrl = await driver.getCurrentUrl();
-    if (prev && prev.clickElementSelector && currentUrl !== page.url && !page.bypassWait) {
+    if (page.isRedirect) continue;
+    if (prev && prev.clickElementSelector && currentUrl !== page.url) {
       // edge 18 takes forever to test codecs.. so need to wait a long time for page to load
       console.log(`URL ${currentUrl} SHOULD BE ${page.url}`);
       await driver.wait(until.urlIs(page.url), 60e3);

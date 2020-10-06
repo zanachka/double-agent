@@ -11,13 +11,13 @@ export enum DomainType {
 export function getDomainType(url: URL | string) {
   const host = typeof url === 'string' ? url : url.host;
   const domain = extractDomainFromHost(host);
-  if (domain === MainDomain) {
+  if (domain === MainDomain || domain === DomainType.MainDomain.toLowerCase()) {
     return DomainType.MainDomain;
-  } else if (domain === CrossDomain) {
+  } else if (domain === CrossDomain || domain === DomainType.CrossDomain.toLowerCase()) {
     return DomainType.CrossDomain;
-  } else if (domain === SubDomain) {
+  } else if (domain === SubDomain || domain === DomainType.SubDomain.toLowerCase()) {
     return DomainType.SubDomain;
-  } else if (domain === TlsDomain) {
+  } else if (domain === TlsDomain || domain === DomainType.TlsDomain.toLowerCase()) {
     return DomainType.TlsDomain;
   } else {
     throw new Error(`Unknown domain type: ${domain}`);
@@ -41,6 +41,14 @@ export function addPageIndexToUrl(url: string, pageIndex: number) {
   const startUrl = new URL(url);
   startUrl.searchParams.set('pageIndex', pageIndex.toString());
   return startUrl.href;
+}
+
+export function cleanDomains(url: string) {
+  if (!url) return url;
+
+  return url.replace(RegExp(SubDomain, 'g'), 'SubDomain')
+    .replace(RegExp(MainDomain, 'g'), 'MainDomain')
+    .replace(RegExp(CrossDomain, 'g'), 'CrossDomain');
 }
 
 function extractDomainFromHost(host: string) {
